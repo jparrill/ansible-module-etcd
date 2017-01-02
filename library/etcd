@@ -10,10 +10,11 @@ description:
   - Sets or deletes values in etcd.
   - Parent directories of the key will be created if they do not already exist.
 version_added: "0.1"
-author: Rafe Colton
+author: Juan Manuel Parrilla (@jparrill)
 notes:
-  - Supports check mode.
-  - Adapted from https://github.com/devo-ps/ansible-addons
+  - First version do not override the value stored on ETCD
+  - Based on a module from Rafe Colton
+  - Adapted from https://github.com/modcloth-labs/ansible-module-etcd
 requirements:
   - requests >= 2.4
   - python-etcd >= 0.3.2
@@ -136,7 +137,7 @@ def main():
     except etcd.EtcdKeyNotFound:
         # There is not value on ETCD
         prev_value = None
- 
+
     #handle check mode
     #if module.check_mode:
     #    if ((state == 'absent' and prev_value is not None) or
@@ -176,7 +177,7 @@ def main():
     }
 
     #if debug:
-    #    results['debug'] = debug  
+    #    results['debug'] = debug
 
     module.exit_json(**results)
 
