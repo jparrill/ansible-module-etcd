@@ -54,6 +54,11 @@ options:
       - must be the etcd leader or this module will err.
     required: false
     default: true
+  override:
+    description:
+      - Force the overwriting of a key-value on etcd
+    required: false
+    default: false
 """
 
 EXAMPLES = """
@@ -86,7 +91,6 @@ try:
     requests_found = True
 except ImportError:
     requests_found = False
-
 
 def main():
 
@@ -140,12 +144,12 @@ def main():
         # There is not value on ETCD
         prev_value = None
 
-    #handle check mode
-    #if module.check_mode:
-    #    if ((state == 'absent' and prev_value is not None) or
-    #            (state == 'present' and prev_value != value)):
-    #                change = True
-    #    module.exit_json(changed=change)
+    # Handle check mode
+    if module.check_mode:
+        if ((state == 'absent' and prev_value is not None) or
+                (state == 'present' and prev_value != value)):
+                    change = True
+        module.exit_json(changed=change)
 
     if state == 'present' and prev_value == None:
         # If 'Present' and there is not a previous value on ETCD
