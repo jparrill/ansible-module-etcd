@@ -1,0 +1,89 @@
+---
+- name: 'Testing ETCD Module'
+  hosts: localhost
+  become: false
+  vars:
+    - etcd_test_key: '/test_key'
+    - etcd_test_value: 'test_value'
+    - etcd_inner_test_key: '/test/test_inner_key'
+    - etcd_inner_test_value: 'test_inner_value'
+  tasks:
+    ## Testing ETCD Module
+    - name: '[TEST][MUST CHANGE] Set Value on etcd'
+      etcd:
+        state: present
+        host: 127.0.0.1
+        port: 2379
+        key: "{{ item.key }}"
+        value: "{{ item.value }}"
+      delegate_to: localhost
+      connection: local
+      with_items:
+        - { key: "{{ etcd_test_key}}" , value: "{{ etcd_test_value }}" }
+        - { key: "{{ etcd_inner_test_key }}" , value: "{{ etcd_inner_test_value }}" }
+
+    - name: '[TEST][MUST OK] Set the same value on etcd'
+      etcd:
+        state: present
+        host: 127.0.0.1
+        port: 2379
+        key: "{{ item.key }}"
+        value: "{{ item.value }}"
+      delegate_to: localhost
+      connection: local
+      register: same_value
+      failed_when: same_value | changed
+      with_items:
+        - { key: "{{ etcd_test_key}}" , value: "{{ etcd_test_value }}" }
+        - { key: "{{ etcd_inner_test_key }}" , value: "{{ etcd_inner_test_value }}" }
+
+    - name: '[TEST][MUST FAIL] Try to override the value on etcd'
+      etcd:
+        state: present
+        host: 127.0.0.1
+        port: 2379
+        key: "{{ item.key }}"
+        value: "{{ item.value }}"
+      delegate_to: localhost
+      connection: local
+      ignore_errors: yes
+      with_items:
+        - { key: "{{ etcd_test_key }}", value: "{{ etcd_test_value }}_OVERRIDE" }
+        - { key: "{{ etcd_inner_test_key }}", value: "{{ etcd_inner_test_value }}_OVERRIDE" }
+
+    ## Testing ETCD Lookup
+    - set_fact:
+        etcd_get_test: "{{ lookup('etcd2', '{{ etcd_test_key }}') }}"
+        etcd_get_inner_test: "{{ lookup('etcd2', '{{ etcd_inner_test_key }}') }}"
+
+    - debug:
+        msg: "{{ item }}"
+        verbosity: 1
+      with_items:
+        - "{{ etcd_get_test }}"
+        - "{{ etcd_get_inner_test }}"
+        - "{{ etcd_test_value }}"
+        - "{{ etcd_inner_test_value }}"
+
+    - name: '[TEST LOOKUP] Cheking ETCD Values'
+      fail:
+        msg: "The returned values are not correct '{{ item.val1 }}' VS '{{ item.val2 }}'"
+      when:
+        - item.val1 != item.val2
+      with_items:
+        - { val1: "{{ etcd_get_test }}" , val2: "{{ etcd_test_value }}" }
+        - { val1: "{{ etcd_get_inner_test }}", val2: "{{ etcd_inner_test_value }}" }
+
+
+    ## Cleaning
+    - name: '[TEST][MUST CHANGE] Delete Value on etcd'
+      etcd:
+        state: absent
+        host: 127.0.0.1
+        port: 2379
+        key: "{{ item }}"
+      delegate_to: localhost
+      connection: local
+      with_items:
+        - "{{ etcd_test_key }}"
+        - "{{ etcd_inner_test_key }}"
