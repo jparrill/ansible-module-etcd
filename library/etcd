@@ -98,6 +98,7 @@ def main():
             key=dict(required=True),
             port=dict(default=4001),
             value=dict(required=False, default=None),
+            override=dict(required=False, default=False),
         ),
         supports_check_mode=True
     )
@@ -114,6 +115,7 @@ def main():
 
     key = module.params['key']
     value = module.params['value']
+    override = module.params['override']
 
     if state == 'present' and not value:
         module.fail_json(msg='Value is required with state="present".')
@@ -158,8 +160,12 @@ def main():
         if prev_value == value:
             # The value to set, is already present
             change = False
+        elif override == 'True':
+            # Trying to Override already existant key on ETCD with flag
+            set_res = client.write(key, value)
+            change = True
         else:
-            # Trying to Override already existant key on ETCD
+            # Trying to Override already existant key on ETCD without flag
             module.fail_json(msg="The Key '%s' is already set with '%s', exiting..." % (key,prev_value))
 
     elif state == 'absent':

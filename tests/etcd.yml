@@ -8,6 +8,19 @@
     - etcd_inner_test_key: '/test/test_inner_key'
     - etcd_inner_test_value: 'test_inner_value'
   tasks:
+    ## Clean step from failed executions
+    - name: '[TEST] Clean step from failed executions'
+      etcd:
+        state: absent
+        host: 127.0.0.1
+        port: 2379
+        key: "{{ item }}"
+      delegate_to: localhost
+      connection: local
+      with_items:
+        - "{{ etcd_test_key }}"
+        - "{{ etcd_inner_test_key }}"
+
     ## Testing ETCD Module
     - name: '[TEST][MUST CHANGE] Set Value on etcd'
       etcd:
@@ -65,7 +78,7 @@
         - "{{ etcd_test_value }}"
         - "{{ etcd_inner_test_value }}"
 
-    - name: '[TEST LOOKUP] Cheking ETCD Values'
+    - name: '[TEST LOOKUP] Checking ETCD Values'
       fail:
         msg: "The returned values are not correct '{{ item.val1 }}' VS '{{ item.val2 }}'"
       when:
@@ -74,6 +87,33 @@
         - { val1: "{{ etcd_get_test }}" , val2: "{{ etcd_test_value }}" }
         - { val1: "{{ etcd_get_inner_test }}", val2: "{{ etcd_inner_test_value }}" }
 
+    ## Override
+    - name: '[TEST][MUST CHANGE] Force override the value on etcd'
+      etcd:
+        state: present
+        host: 127.0.0.1
+        port: 2379
+        key: "{{ item.key }}"
+        value: "{{ item.value }}"
+        override: True
+      delegate_to: localhost
+      connection: local
+      with_items:
+        - { key: "{{ etcd_test_key }}", value: "{{ etcd_test_value }}_OVERRIDE" }
+        - { key: "{{ etcd_inner_test_key }}", value: "{{ etcd_inner_test_value }}_OVERRIDE" }
+
+    - set_fact:
+        etcd_get_test: "{{ lookup('etcd2', '{{ etcd_test_key }}') }}"
+        etcd_get_inner_test: "{{ lookup('etcd2', '{{ etcd_inner_test_key }}') }}"
+
+    - name: '[TEST LOOKUP] Checking ETCD Overrided Values'
+      fail:
+        msg: "The returned values are not correct '{{ item.val1 }}' VS '{{ item.val2 }}'"
+      when:
+        - item.val1 != item.val2
+      with_items:
+        - { val1: "{{ etcd_get_test }}", val2: "{{ etcd_test_value }}_OVERRIDE" }
+        - { val1: "{{ etcd_get_inner_test }}", val2: "{{ etcd_inner_test_value }}_OVERRIDE" }
 
     ## Cleaning
     - name: '[TEST][MUST CHANGE] Delete Value on etcd'
