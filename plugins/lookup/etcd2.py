@@ -1,4 +1,5 @@
 # (c) 2013, Jan-Piet Mens <jpmens(at)gmail.com>
+# (m) 2017, Juan Manuel Parrilla <jparrill@redhat.com>
 #
 # This file is part of Ansible
 #
@@ -28,9 +29,10 @@ from ansible.plugins.lookup import LookupBase
 from ansible.module_utils.urls import open_url
 
 # this can be made configurable, not should not use ansible.cfg
-ANSIBLE_ETCD_URL = 'http://127.0.0.1:4001'
 if os.getenv('ANSIBLE_ETCD_URL') is not None:
     ANSIBLE_ETCD_URL = os.environ['ANSIBLE_ETCD_URL']
+else:
+    ANSIBLE_ETCD_URL = 'http://127.0.0.1:4001'
 
 class Etcd:
     def __init__(self, url=ANSIBLE_ETCD_URL, validate_certs=True):
@@ -53,7 +55,14 @@ class Etcd:
             item = json.loads(data)
             if 'node' in item:
                 item = item['node']
-                if 'value' in item:
+                if 'nodes' in item:
+                    var_map = {}
+                    for node in item['nodes']:
+                        var_map[node['key'].split('/')[-1]] = node['value']
+
+                    return var_map
+
+                elif 'value' in item:
                     value = item['value']
 
         except:
