@@ -71,6 +71,47 @@ This Module are prepared to **NOT** override any value on ETCD, I will implement
 ### ETCD Lookup
 This lookup plugin will connect by default to http://127.0.0.1:4001, you must set ANSIBLE_ETCD_URL environment variable to change the endpoint.
 
+**FEATURE**: This lookup has been modified from th original one to be capable to get all variables from a ETCD folder.
+
+```
+PLAY [Openstack Life-Cycle Management Framework] *********************************************************************************************************************************************
+
+TASK [Gathering Facts] ***********************************************************************************************************************************************************************
+ok: [localhost]
+
+TASK [Getting Variables from ETCD Folder] ****************************************************************************************************************************************************
+ok: [localhost]
+
+TASK [debug] *********************************************************************************************************************************************************************************
+ok: [localhost] => {
+    "changed": false,
+    "msg": {
+        ...
+        ...
+        ...
+        "CEILOMETER_API_PORT": "8777",
+        "CEILOMETER_LOG": "LOG_LOCAL6",
+        "CEILOMETER_TTL": "7776000",
+        "CEILOMETER_USER": "ceilometer",
+        "CEPH_VERSION": "0.80.8",
+        "CINDER_BCK_DRIVER": "cinder.backup.drivers.ceph",
+        "CINDER_CEPH_BCK_USER": "backup",
+        "CINDER_CEPH_CHUNK": "134217728",
+        "CINDER_DB": "cinder",
+        "CINDER_DEF_VOL": "standard",
+        "CINDER_ENABLE_BACKEND": "standard,ssd",
+        ...
+        ...
+      }
+}
+
+TASK [00_entry_validation : Creating controller files] ***************************************************************************************************************************************
+changed: [localhost] => (item={'key': u'ceilometer', 'value': {u'origin': u'/etc/ceilometer/ceilometer.conf', u'tmp': u'/home/test/ceilometer.conf', u'template': u'ceilometer-controller.conf.j2'}})
+
+PLAY RECAP ***********************************************************************************************************************************************************************************
+localhost                  : ok=4    changed=1    unreachable=0    failed=0   
+```
+
 ## Testing
 To execute all test, just execute the playbook on test folder, to perform all the E2E tests (Lookup included). From base folder, execute this:
 
