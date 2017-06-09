@@ -1,5 +1,24 @@
-#!/usr/bin/env python
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
+#
+# Copyright (c) 2016 Red Hat, Inc.
+#
+# This file is part of Ansible
+#
+# Ansible is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Ansible is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Ansible.  If not, see <http://www.gnu.org/licenses/>.
+#
+
 
 ANSIBLE_METADATA = {'metadata_version': '1.0',
                     'status': ['preview'],
@@ -13,7 +32,7 @@ description:
   - Sets or deletes values in etcd.
   - Parent directories of the key will be created if they do not already exist.
 version_added: "0.1"
-author: Juan Manuel Parrilla (@jparrill)
+author: Juan Manuel Parrilla (@padajuan)
 notes:
   - First version do not override the value stored on ETCD
   - Based on a module from Rafe Colton
@@ -29,6 +48,12 @@ options:
     required: true
     choices: [present, absent]
     default: null
+  protocol:
+    description:
+      - The scheme to connect to ETCD
+    required: false
+    default: http
+    choices: [http, https]
   host:
     description:
       - The etcd host to use
@@ -39,6 +64,11 @@ options:
       - The port to use on the above etcd host
     required: false
     default: 4001
+  api_version:
+    description:
+      - Api version of ETCD endpoint
+    required: false
+    default: '/v2'
   key:
     description:
       - The key in etcd at which to set the value
@@ -49,6 +79,11 @@ options:
       - The value to be set in etcd
     required: true
     default: null
+  override:
+    description:
+      - Force the overwriting of a key-value on etcd
+    required: false
+    default: false
   allow_redirect:
     description:
       - Etcd attempts to redirect all write requests to the etcd master
@@ -57,11 +92,39 @@ options:
       - must be the etcd leader or this module will err.
     required: false
     default: true
-  override:
+  read_timeout:
     description:
-      - Force the overwriting of a key-value on etcd
+      - Time limit for a read request agains ETCD
     required: false
-    default: false
+    default: 60
+    type: int
+  cert:
+    description:
+      - Certificate to connect to an ETCD server with SSL
+    required: false
+    default: None
+  cert_ca:
+    description:
+      - CA Certificate to connect to an ETCD server with SSL
+    required: false
+    default: None
+  username:
+    description:
+      - Username to connect to ETCD with RBAC activated
+    required: false
+    default: None (by default etcd will use guest)
+  password:
+    description:
+      - Password to authenticate to ETCD with RBAC activated
+    required: false
+    default: None
+
+notes:
+  - The python-etcd bindings are not still compatible with v1 and v3 of 
+    ETCD api endpoint, then we will not work with it.
+
+  - I will try to contribute with python-etcd to make it compatible
+    with those versions.
 """
 
 EXAMPLES = """
@@ -80,7 +143,39 @@ EXAMPLES = """
     port=4001
     key=/asdf/foo/bar/baz/gorp
 
+# override an existant ETCD value
+- etcd:
+    state: present
+    host: 127.0.0.1
+    port: 2379
+    key: "test"
+    value: "test_value"
+    override: True
+
+# override a value through SSL connection
+- etcd:
+    state: present
+    protocol: https
+    host: etcd.globalcorp.com
+    port: 2379
+    key: "test"
+    value: "test_value"
+    cert: /path/to/cert
+    ca_cert: /path/to/CA
+    override: True
+
+
+# delete an ETCD value with a user and password
+- etcd:
+    state: absent
+    host: 127.0.0.1
+    port: 2379
+    username: 'user'
+    password: 'P4ssW0rd'
+
+
 # NOTE: you may wish to use `connection: local` with these tasks
+        always that you do not have SSL activated on ETCD server
 """
 
 from ansible.module_utils.basic import AnsibleModule
@@ -102,7 +197,7 @@ def main():
     module = AnsibleModule(
         argument_spec=dict(
             state=dict(required=True, choices=['present', 'absent']),
-            protocol=dict(required=False, default='http'),
+            protocol=dict(required=False, default='http', choices=['http','https']),
             host=dict(required=False, default='127.0.0.1'),
             port=dict(required=False, default=4001),
             api_version=dict(required=False, default='/v2'),
@@ -213,15 +308,15 @@ def main():
             except requests.ConnectionError:
                 module.fail_json(msg="Cannot connect to target.")
 
+
+
     results = {
         'changed': change,
         'value': value,
         'key': key
     }
 
-    #if debug:
-    #    results['debug'] = debug
-
     module.exit_json(**results)
 
-main()
+if __name__ == "__main__":
+    main()
