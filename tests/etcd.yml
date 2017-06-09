@@ -68,8 +68,8 @@
 
     ## Testing ETCD Lookup
     - set_fact:
-        etcd_get_test: "{{ lookup('etcd2', '{{ etcd_test_key }}') }}"
-        etcd_get_inner_test: "{{ lookup('etcd2', '{{ etcd_inner_test_key }}') }}"
+        etcd_get_test: "{{ lookup('etcd', '{{ etcd_test_key }}') }}"
+        etcd_get_inner_test: "{{ lookup('etcd', '{{ etcd_inner_test_key }}') }}"
 
     - debug:
         msg: "{{ item }}"
@@ -105,8 +105,8 @@
         - { key: "{{ etcd_inner_test_key }}", value: "{{ etcd_inner_test_value }}_OVERRIDE" }
 
     - set_fact:
-        etcd_get_test: "{{ lookup('etcd2', '{{ etcd_test_key }}') }}"
-        etcd_get_inner_test: "{{ lookup('etcd2', '{{ etcd_inner_test_key }}') }}"
+        etcd_get_test: "{{ lookup('etcd', '{{ etcd_test_key }}') }}"
+        etcd_get_inner_test: "{{ lookup('etcd', '{{ etcd_inner_test_key }}') }}"
 
     - name: '[TEST LOOKUP] Checking ETCD Overrided Values'
       fail:
