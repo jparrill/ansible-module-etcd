@@ -69,13 +69,9 @@ from ansible.plugins.lookup import LookupBase
 from ansible.module_utils.urls import open_url
 
 # this can be made configurable, not should not use ansible.cfg
-ANSIBLE_ETCD_URL = 'http://127.0.0.1:4001'
-if os.getenv('ANSIBLE_ETCD_URL') is not None:
-    ANSIBLE_ETCD_URL = os.environ['ANSIBLE_ETCD_URL']
+ANSIBLE_ETCD_URL = os.getenv('ANSIBLE_ETCD_URL', 'http://127.0.0.1:4001')
+ANSIBLE_ETCD_VERSION = os.getenv('ANSIBLE_ETCD_VERSION', 'v1')
 
-ANSIBLE_ETCD_VERSION = 'v1'
-if os.getenv('ANSIBLE_ETCD_VERSION') is not None:
-    ANSIBLE_ETCD_VERSION = os.environ['ANSIBLE_ETCD_VERSION']
 
 class Etcd:
     def __init__(self, url=ANSIBLE_ETCD_URL, version=ANSIBLE_ETCD_VERSION,
