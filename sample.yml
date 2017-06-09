@@ -26,7 +26,7 @@
 
     - name: 'Search the Key on ETCD'
       debug: 
-        msg: "The ETCD contains '{{ lookup('etcd2', '/test/ectd_key') }}' value"
+        msg: "The ETCD contains '{{ lookup('etcd', '/test/ectd_key') }}' value"
 
     - name: 'Delete Key-Value from ETCD'
       etcd:
