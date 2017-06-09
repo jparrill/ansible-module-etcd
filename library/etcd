@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from ansible.module_utils.basic import *
+
+ANSIBLE_METADATA = {'metadata_version': '1.0',
+                    'status': ['preview'],
+                    'supported_by': 'community'}
 
 DOCUMENTATION = """
 ---
@@ -80,6 +83,8 @@ EXAMPLES = """
 # NOTE: you may wish to use `connection: local` with these tasks
 """
 
+from ansible.module_utils.basic import AnsibleModule
+
 try:
     import etcd
     etcd_found = True
@@ -97,12 +102,19 @@ def main():
     module = AnsibleModule(
         argument_spec=dict(
             state=dict(required=True, choices=['present', 'absent']),
-            allow_redirect=dict(required=False, default=True),
+            protocol=dict(required=False, default='http'),
             host=dict(required=False, default='127.0.0.1'),
+            port=dict(required=False, default=4001),
+            api_version=dict(required=False, default='/v2'),
             key=dict(required=True),
-            port=dict(default=4001),
             value=dict(required=False, default=None),
             override=dict(required=False, default=False),
+            allow_redirect=dict(required=False, default=True),
+            read_timeout=dict(required=False, default=60),
+            cert=dict(required=False, default=None),
+            ca_cert=dict(required=False, default=None),
+            username=dict(required=False, default=None),
+            password=dict(required=False, default=None, no_log=True)
         ),
         supports_check_mode=True
     )
@@ -112,22 +124,43 @@ def main():
 
     if not requests_found:
         module.fail_json(msg="the python requests module is required")
+   
+    # For now python-etcd is not compatible with ETCD v1 and v3 api version
+    # Contributing on https://github.com/jplana/python-etcd.
+    # The entry point at this module is prepared for other versions.
+    if module.params['api_version'] != '/v2':
+        module.fail_json(msg="This module only support v2 of ETCD, for now")
 
+    # State
     state = module.params['state']
+    
+    # Target info
+    target_scheme = module.params['protocol']
     target_host = module.params['host']
     target_port = int(module.params['port'])
-
+    target_version = module.params['api_version']
+    
+    # K-V
     key = module.params['key']
     value = module.params['value']
+    
+    # Config
     override = module.params['override']
 
     if state == 'present' and not value:
         module.fail_json(msg='Value is required with state="present".')
 
     kwargs = {
+        'protocol': target_scheme,
         'host': target_host,
         'port': target_port,
-        'allow_redirect': module.params['allow_redirect']
+        'version_prefix': target_version,
+        'allow_redirect': module.params['allow_redirect'],
+        'read_timeout': int(module.params['read_timeout']),
+        'cert': module.params['cert'],
+        'ca_cert': module.params['ca_cert'],
+        'username': module.params['username'],
+        'password': module.params['password']
     }
 
     client = etcd.Client(**kwargs)
@@ -157,7 +190,7 @@ def main():
             set_res = client.write(key, value)
             change = True
         except requests.ConnectionError:
-            module.fail_json(msg="Can not connect to target.")
+            module.fail_json(msg="Cannot connect to target.")
 
     elif state == 'present' and prev_value != None:
         # If 'Present' and exists a previous value on ETCD
@@ -178,7 +211,7 @@ def main():
                 set_res = client.delete(key)
                 change = True
             except requests.ConnectionError:
-                module.fail_json(msg="Can not connect to target.")
+                module.fail_json(msg="Cannot connect to target.")
 
     results = {
         'changed': change,
