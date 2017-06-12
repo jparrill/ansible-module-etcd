@@ -1,9 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 #
-# Copyright (c) 2016 Red Hat, Inc.
-#
-# This file is part of Ansible
+# (c) 2017, Juan Manuel Parrilla <jparrill@redhat.com>
 #
 # Ansible is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -31,14 +29,9 @@ short_description: Set and delete values from etcd
 description:
   - Sets or deletes values in etcd.
   - Parent directories of the key will be created if they do not already exist.
-version_added: "0.1"
+version_added: "2.4"
 author: Juan Manuel Parrilla (@padajuan)
-notes:
-  - First version do not override the value stored on ETCD
-  - Based on a module from Rafe Colton
-  - Adapted from https://github.com/modcloth-labs/ansible-module-etcd
 requirements:
-  - requests >= 2.4
   - python-etcd >= 0.3.2
 options:
   state:
@@ -120,9 +113,11 @@ options:
     default: None
 
 notes:
-  - The python-etcd bindings are not still compatible with v1 and v3 of 
+  - Do not override the value stored on ETCD, you must specify it.
+  - Based on a module from Rafe Colton
+  - Adapted from https://github.com/modcloth-labs/ansible-module-etcd
+  - The python-etcd bindings are not still compatible with v1 and v3 of
     ETCD api endpoint, then we will not work with it.
-
   - I will try to contribute with python-etcd to make it compatible
     with those versions.
 """
@@ -179,6 +174,7 @@ EXAMPLES = """
 """
 
 from ansible.module_utils.basic import AnsibleModule
+from ansible.module_utils.urls import ConnectionError
 
 try:
     import etcd
@@ -186,26 +182,21 @@ try:
 except ImportError:
     etcd_found = False
 
-try:
-    import requests
-    requests_found = True
-except ImportError:
-    requests_found = False
 
 def main():
 
     module = AnsibleModule(
         argument_spec=dict(
             state=dict(required=True, choices=['present', 'absent']),
-            protocol=dict(required=False, default='http', choices=['http','https']),
+            protocol=dict(required=False, default='http', choices=['http', 'https']),
             host=dict(required=False, default='127.0.0.1'),
-            port=dict(required=False, default=4001),
+            port=dict(required=False, default=4001, type='int'),
             api_version=dict(required=False, default='/v2'),
             key=dict(required=True),
             value=dict(required=False, default=None),
             override=dict(required=False, default=False),
             allow_redirect=dict(required=False, default=True),
-            read_timeout=dict(required=False, default=60),
+            read_timeout=dict(required=False, default=60, type='int'),
             cert=dict(required=False, default=None),
             ca_cert=dict(required=False, default=None),
             username=dict(required=False, default=None),
@@ -217,9 +208,6 @@ def main():
     if not etcd_found:
         module.fail_json(msg="the python etcd module is required")
 
-    if not requests_found:
-        module.fail_json(msg="the python requests module is required")
-   
     # For now python-etcd is not compatible with ETCD v1 and v3 api version
     # Contributing on https://github.com/jplana/python-etcd.
     # The entry point at this module is prepared for other versions.
@@ -228,17 +216,17 @@ def main():
 
     # State
     state = module.params['state']
-    
+
     # Target info
     target_scheme = module.params['protocol']
     target_host = module.params['host']
     target_port = int(module.params['port'])
     target_version = module.params['api_version']
-    
+
     # K-V
     key = module.params['key']
     value = module.params['value']
-    
+
     # Config
     override = module.params['override']
 
@@ -279,15 +267,15 @@ def main():
                     change = True
         module.exit_json(changed=change)
 
-    if state == 'present' and prev_value == None:
+    if state == 'present' and prev_value is None:
         # If 'Present' and there is not a previous value on ETCD
         try:
             set_res = client.write(key, value)
             change = True
-        except requests.ConnectionError:
+        except ConnectionError:
             module.fail_json(msg="Cannot connect to target.")
 
-    elif state == 'present' and prev_value != None:
+    elif state == 'present' and prev_value is not None:
         # If 'Present' and exists a previous value on ETCD
         if prev_value == value:
             # The value to set, is already present
@@ -298,17 +286,15 @@ def main():
             change = True
         else:
             # Trying to Override already existant key on ETCD without flag
-            module.fail_json(msg="The Key '%s' is already set with '%s', exiting..." % (key,prev_value))
+            module.fail_json(msg="The Key '%s' is already set with '%s', exiting..." % (key, prev_value))
 
     elif state == 'absent':
         if prev_value is not None:
             try:
                 set_res = client.delete(key)
                 change = True
-            except requests.ConnectionError:
+            except ConnectionError:
                 module.fail_json(msg="Cannot connect to target.")
-
-
 
     results = {
         'changed': change,
