@@ -4,7 +4,6 @@ Ansible Module to manage ETCD Keys and Values, also a Lookup plugin
 ## Requirements
 - Ansible >= 2.1
 - python-etcd package
-- python-requests package
 - Docker (optional, Just to try the module)
 
 ### Fedora
@@ -17,7 +16,7 @@ sudo dnf install ansible python2-requests python2-python-etcd
 sudo dnf install python2-virtualenv
 virtualenv -p python2 .virtualenv
 source .virtualenv/bin/activate
-pip install requests python-etcd ansible
+pip install python-etcd ansible
 ```
 
 ## How to try
