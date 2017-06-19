@@ -90,7 +90,6 @@ options:
       - Time limit for a read request agains ETCD
     required: false
     default: 60
-    type: int
   cert:
     description:
       - Certificate to connect to an ETCD server with SSL
@@ -123,6 +122,7 @@ notes:
 """
 
 EXAMPLES = """
+---
 # set a value in etcd
 - etcd:
     state=present
@@ -167,11 +167,20 @@ EXAMPLES = """
     port: 2379
     username: 'user'
     password: 'P4ssW0rd'
-
-
-# NOTE: you may wish to use `connection: local` with these tasks
-        always that you do not have SSL activated on ETCD server
 """
+
+RETURN = '''
+---
+key:
+    description: The key quieried
+    returned: success
+    type: string
+
+value:
+    description: The result of the write on ETCD
+    returned: sucess
+    type: dictionary
+'''
 
 from ansible.module_utils.basic import AnsibleModule
 from ansible.module_utils.urls import ConnectionError
