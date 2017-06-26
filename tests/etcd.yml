@@ -9,6 +9,7 @@
     - etcd_test_value: 'test_value'
     - etcd_inner_test_key: '/test/test_inner_key'
     - etcd_inner_test_value: 'test_inner_value'
+    - etcd_tree: '/'  
   tasks:
     ## Clean step from failed executions
     - name: '[TEST] Clean step from failed executions'
@@ -37,6 +38,19 @@
       with_items:
         - { key: "{{ etcd_test_key}}" , value: "{{ etcd_test_value }}" }
         - { key: "{{ etcd_inner_test_key }}" , value: "{{ etcd_inner_test_value }}" }
+        - { key: 'key_001', value: 'value_001' } 
+        - { key: 'key_002', value: 'value_002' } 
+        - { key: 'key_003', value: 'value_003' } 
+        - { key: 'key_004', value: 'value_004' } 
+        - { key: 'key_folder/fold_key_001', value: 'val_fold_001' } 
+        - { key: 'key_folder/fold_key_002/inner_01', value: 'inner_001' } 
+        - { key: 'key_folder/fold_key_002/inner_02/in_inner_02', value: 'in_inner_002' } 
+        - { key: 'key_folder/fold_key_002/inner_02/in_inner_03', value: 'in_inner_003' } 
+        - { key: 'key_folder/fold_key_002/inner_02/in_inner_04', value: 'in_inner_004' } 
+        - { key: 'key_folder/fold_key_002/inner_02/in_inner_05', value: 'in_inner_005' } 
+        - { key: 'key_folder/key_003/test_01', value: 'value_003_test_01' } 
+        - { key: 'key_folder/key_003/test_02/inner_test_02', value: 'lvl4' } 
+        - { key: 'key_folder/key_004', value: 'value_004' } 
 
     - name: '[TEST][MUST OK] Set the same value on etcd'
       etcd:
@@ -71,6 +85,7 @@
     - set_fact:
         etcd_get_test: "{{ lookup('etcd', '{{ etcd_test_key }}') }}"
         etcd_get_inner_test: "{{ lookup('etcd', '{{ etcd_inner_test_key }}') }}"
+        etcd_get_tree: "{{ lookup('etcd', '{{ etcd_tree }}') }}"
 
     - debug:
         msg: "{{ item }}"
@@ -80,6 +95,7 @@
         - "{{ etcd_get_inner_test }}"
         - "{{ etcd_test_value }}"
         - "{{ etcd_inner_test_value }}"
+        - "{{ etcd_get_tree }}"
 
     - name: '[TEST LOOKUP] Checking ETCD Values'
       fail:
