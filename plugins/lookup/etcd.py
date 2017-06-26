@@ -85,39 +85,47 @@ class Etcd:
         self.baseurl = '%s/%s/keys' % (self.url,self.version)
         self.validate_certs = validate_certs
 
-    def get(self, key):
-        url = "%s/%s" % (self.baseurl, key)
+    def _parse_node(self, node):
+        # This function will receive all etcd tree,
+        # if the level requested has any node, the recursion starts
+        # create a list in the dir variable and it is passed to the
+        # recursive function, and so on, if we get a variable,
+        # the function will create a key-value at this level and
+        # undoing the loop.
+        path = {}
+        if node.get('dir', False):
+            for n in node.get('nodes', []):
+                path[n['key'].split('/')[-1]] = self._parse_node(n)
 
+        else:
+            path = node['value']
+
+        return path
+
+    def get(self, key):
+        url = "%s/%s?recursive=true" % (self.baseurl, key)
         data = None
-        value = ""
+        value = {}
         try:
             r = open_url(url, validate_certs=self.validate_certs)
             data = r.read()
         except:
-            return value
+            return None
 
         try:
+            # I will not support Version 1 of etcd for folder parsing
             item = json.loads(data)
             if self.version == 'v1':
+                # When ETCD are working with just v1
                 if 'value' in item:
                     value = item['value']
             else:
                 if 'node' in item:
-                    item = item['node']
-                    if 'nodes' in item:
-                        var_map = {}
-                        for node in item['nodes']:
-                            if 'dir' not in node:
-                                var_map[node['key'].split('/')[-1]] = node['value']
-                            else:
-                                pass
-
-                        return var_map
-
-                    elif 'value' in item:
-                        value = item['value']
+                    # When a usual result from ETCD
+                    value = self._parse_node(item['node'])
 
             if 'errorCode' in item:
+                # Here return an error when an unknown entry responds
                 value = "ENOENT"
         except:
             raise
@@ -139,4 +147,3 @@ class LookupModule(LookupBase):
             value = etcd.get(key)
             ret.append(value)
         return ret
-
