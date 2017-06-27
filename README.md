@@ -65,7 +65,7 @@ localhost                  : ok=5    changed=2    unreachable=0    failed=0
 
 ## Desired Module way of work
 ### ETCD Module
-This Module are prepared to **NOT** override any value on ETCD, I will implement this feature soon.
+This Module are prepared to **NOT** override any value on ETCD, you must add **override: true** key on the module execution to do that.
 
 ### ETCD Lookup
 This lookup plugin will connect by default to http://127.0.0.1:4001, you must set some environment variables: 
