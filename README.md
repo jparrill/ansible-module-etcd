@@ -35,6 +35,7 @@ I will assume that we already have all the requirements fullfiled (docker daemon
 ```
 git clone https://github.com/padajuan/ansible-module-etcd.git
 cd ansible-module-etcd
+export ANSIBLE_ETCD_VERSION=v2
 ansible-playbook -i inv sample.yml -u <username>
 ```
 
