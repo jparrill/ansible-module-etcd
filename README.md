@@ -8,7 +8,7 @@ Ansible Module to manage ETCD Keys and Values, also a Lookup plugin
 
 ### Fedora
 ```
-sudo dnf install ansible python2-requests python2-python-etcd
+sudo dnf install ansible python2-python-etcd
 ```
 
 ### Virtualenv
@@ -132,6 +132,7 @@ localhost                  : ok=4    changed=1    unreachable=0    failed=0
 To execute all test, just execute the playbook on test folder, to perform all the E2E tests (Lookup included). From base folder, execute this:
 
 ```
+export ANSIBLE_ETCD_VERSION=v2
 ansible-playbook -i inv tests/etcd.yml -u <username>
 ```
 
