@@ -68,7 +68,23 @@ localhost                  : ok=5    changed=2    unreachable=0    failed=0
 This Module are prepared to **NOT** override any value on ETCD, I will implement this feature soon.
 
 ### ETCD Lookup
-This lookup plugin will connect by default to http://127.0.0.1:4001, you must set ANSIBLE_ETCD_URL environment variable to change the endpoint.
+This lookup plugin will connect by default to http://127.0.0.1:4001, you must set some environment variables: 
+
+#### ANSIBLE_ETCD_URL
+- ANSIBLE_ETCD_URL=http://127.0.0.1:4001
+```
+export ANSIBLE_ETCD_URL=http://127.0.0.1:2379
+```
+
+This environment variable will change the URL of ETCD that you are pointing to
+
+#### ANSIBLE_ETCD_VERSION
+- ANSIBLE_ETCD_VERSION=v2
+```sh
+export ANSIBLE_ETCD_VERSION=v2
+```
+
+This environment variable will change the version of ETCD that you are pointing to
 
 **FEATURE**: This lookup has been modified from th original one to be capable to get all variables from a ETCD folder.
 
