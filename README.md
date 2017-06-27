@@ -80,7 +80,7 @@ This environment variable will change the URL of ETCD that you are pointing to
 
 #### ANSIBLE_ETCD_VERSION
 - ANSIBLE_ETCD_VERSION=v2
-```sh
+```
 export ANSIBLE_ETCD_VERSION=v2
 ```
 
