@@ -5,12 +5,28 @@
   hosts: localhost
   become: false
   vars:
+    - dock_command: "etcd --name etcd0 -advertise-client-urls http://{{ ansible_lo.ipv4.address }}:2379 -listen-client-urls http://0.0.0.0:2379 -initial-advertise-peer-urls http://{{ ansible_lo.ipv4.address }}:2380 -listen-peer-urls http://0.0.0.0:2380 -initial-cluster-token etcd-cluster-1 -initial-cluster etcd0=http://{{ ansible_lo.ipv4.address }}:2380"
     - etcd_test_key: '/test_key'
     - etcd_test_value: 'test_value'
     - etcd_inner_test_key: '/test/test_inner_key'
     - etcd_inner_test_value: 'test_inner_value'
     - etcd_tree: '/'  
   tasks:
+    ## Start ETCD as a Container
+    - name: 'Start ETCD container'
+      docker_container:
+        name: 'etcd_server'
+        image: quay.io/coreos/etcd
+        state: started
+        recreate: yes
+        volumes:
+          - "/usr/share/ca-certificates/:/etc/ssl/certs"
+        ports:
+          - "4001:4001"
+          - "2380:2380"
+          - "2379:2379"
+        command: "{{ dock_command }}"
+
     ## Clean step from failed executions
     - name: '[TEST] Clean step from failed executions'
       etcd:
@@ -146,3 +162,8 @@
       with_items:
         - "{{ etcd_test_key }}"
         - "{{ etcd_inner_test_key }}"
+
+    - name: 'Stop ETCD container'
+      docker_container:
+        name: 'etcd_server'
+        state: absent 
